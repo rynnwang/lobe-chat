@@ -1,6 +1,7 @@
+import { SiGithub } from '@icons-pack/react-simple-icons';
 import { Icon, Typography } from '@lobehub/ui';
 import { Button, Divider, Tag } from 'antd';
-import { Github, Settings, Share2 } from 'lucide-react';
+import { Settings, Share2 } from 'lucide-react';
 import Image from 'next/image';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,7 +42,7 @@ const Inner = memo(() => {
       <p>{t('guide.func2.desc')}</p>
       <br />
       <Button
-        icon={<Icon icon={Github} />}
+        icon={<Icon icon={SiGithub as any} />}
         onClick={() => window.open(AGENTS_INDEX_GITHUB, '__blank')}
         type={'primary'}
       >

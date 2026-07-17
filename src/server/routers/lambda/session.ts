@@ -103,7 +103,7 @@ export const sessionRouter = router({
         // if there is no session for user, create one
         if (!item) {
           const res = await ctx.sessionModel.createInbox();
-          pino.info('create inbox session', res);
+          pino.info(res, 'create inbox session');
         }
       }
 

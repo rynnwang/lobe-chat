@@ -114,7 +114,7 @@ describe('LobeQwenAI', () => {
           choices: [
             {
               index: 0,
-              message: { role: 'assistant', content: 'Hello' },
+              message: { role: 'assistant', content: 'Hello', refusal: null },
               finish_reason: 'stop',
               logprobs: null,
             },

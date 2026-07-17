@@ -13,6 +13,8 @@ import { getTracePayload } from '@/utils/trace';
 
 import { parserPluginSettings } from './settings';
 
+export const runtime = 'edge';
+
 const checkAuth = (accessCode: string | null, oauthAuthorized: boolean | null) => {
   const { ACCESS_CODES, PLUGIN_SETTINGS } = getAppConfig();
 

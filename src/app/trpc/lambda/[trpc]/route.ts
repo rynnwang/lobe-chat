@@ -3,24 +3,36 @@ import type { NextRequest } from 'next/server';
 
 import { pino } from '@/libs/logger';
 import { createContext } from '@/server/context';
-import { lambdaRouter } from '@/server/routers/lambda';
 
-const handler = (req: NextRequest) =>
-  fetchRequestHandler({
-    /**
-     * @link https://trpc.io/docs/v11/context
-     */
-    createContext: () => createContext(req),
+export const runtime = 'edge';
 
-    endpoint: '/trpc/lambda',
+// `@/server/routers/lambda` pulls in the Postgres server DB driver, which isn't
+// available on the Edge Runtime. This deployment runs in client-side storage mode
+// (NEXT_PUBLIC_SERVICE_MODE unset), so that router is never imported at all here —
+// the ternary on the literal env var lets the bundler drop the whole DB-backed branch.
+const handler: (req: NextRequest) => Promise<Response> =
+  process.env.NEXT_PUBLIC_SERVICE_MODE === 'server'
+    ? async (req: NextRequest) => {
+        const { lambdaRouter } = await import('@/server/routers/lambda');
 
-    onError: ({ error, path, type }) => {
-      pino.info(`Error in tRPC handler (lambda) on path: ${path}, type: ${type}`);
-      console.error(error);
-    },
+        return fetchRequestHandler({
+          /**
+           * @link https://trpc.io/docs/v11/context
+           */
+          createContext: () => createContext(req),
 
-    req,
-    router: lambdaRouter,
-  });
+          endpoint: '/trpc/lambda',
+
+          onError: ({ error, path, type }) => {
+            pino.info(`Error in tRPC handler (lambda) on path: ${path}, type: ${type}`);
+            console.error(error);
+          },
+
+          req,
+          router: lambdaRouter,
+        });
+      }
+    : async () =>
+        new Response('Server database mode is not enabled in this deployment.', { status: 404 });
 
 export { handler as GET, handler as POST };
