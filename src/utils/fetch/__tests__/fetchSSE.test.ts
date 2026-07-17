@@ -424,12 +424,21 @@ describe('fetchSSE', () => {
         await fetchSSE('/', { onErrorHandle: mockOnErrorHandle });
       } catch (e) {}
 
+      // The exact JSON.parse error message differs across Node/V8 versions, so derive
+      // the expected value the same way the implementation does instead of hardcoding it.
+      let expectedMessage = '';
+      try {
+        JSON.parse(mockError);
+      } catch (e) {
+        expectedMessage = (e as Error).message;
+      }
+
       expect(mockOnErrorHandle).toHaveBeenCalledWith({
         body: {
           context: {
             chunk: 'abc',
             error: {
-              message: 'Unexpected token a in JSON at position 0',
+              message: expectedMessage,
               name: 'SyntaxError',
             },
           },

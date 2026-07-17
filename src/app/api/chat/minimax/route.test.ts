@@ -11,7 +11,7 @@ vi.mock('../[provider]/route', () => ({
 
 describe('Configuration tests', () => {
   it('should have runtime set to "edge"', () => {
-    expect(runtime).toBe('nodejs');
+    expect(runtime).toBe('edge');
   });
 });
 
