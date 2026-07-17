@@ -142,6 +142,18 @@ const nextConfig = {
 
     config.resolve.alias.canvas = false;
 
+    // node:path isn't available on the Edge Runtime (Cloudflare Pages). It's pulled in
+    // transitively by @apidevtools/json-schema-ref-parser (via the plugin OpenAPI
+    // manifest parser), so alias it to a browser-safe implementation everywhere.
+    config.resolve.fallback = { ...config.resolve.fallback, path: 'path-browserify' };
+
+    // This deployment only runs in client-side storage mode (no server Postgres DB), so
+    // the `pg` driver is never actually used at runtime. It's still statically imported
+    // by @/database/server/core/db.ts though, and pulls in node:fs/net/dns/stream, which
+    // don't exist on the Edge Runtime (Cloudflare Pages) — stub it out at the bundler level
+    // instead of trying to make every route that transitively reaches it edge-safe.
+    config.resolve.alias.pg = false;
+
     return config;
   },
 };

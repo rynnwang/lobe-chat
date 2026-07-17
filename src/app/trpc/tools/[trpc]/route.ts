@@ -5,6 +5,8 @@ import { pino } from '@/libs/logger';
 import { createContext } from '@/server/context';
 import { toolsRouter } from '@/server/routers/tools';
 
+export const runtime = 'edge';
+
 const handler = (req: NextRequest) =>
   fetchRequestHandler({
     /**
