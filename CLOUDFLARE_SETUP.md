@@ -70,6 +70,37 @@ Then add API keys for whichever model providers you actually use, e.g.:
 Full list of supported provider variables:
 [docs/self-hosting/environment-variables/model-provider.mdx](docs/self-hosting/environment-variables/model-provider.mdx).
 
+### Using a MaaS / proxy platform instead of the official APIs
+
+If you're routing through a MaaS or proxy platform (one token per platform, custom base
+URL, e.g. a self-hosted gateway) instead of calling OpenAI/Google/Anthropic directly, each
+provider has a `*_PROXY_URL` variable that overrides its default base URL — the API key
+variable is then that platform's token instead of an official one. For example:
+
+| Variable              | Value                                                            |
+| --------------------- | ---------------------------------------------------------------- |
+| `OPENAI_API_KEY`      | your MaaS platform's token for the OpenAI-compatible endpoint    |
+| `OPENAI_PROXY_URL`    | `https://maas-openapi.wanjiedata.com/api/v1`                     |
+| `GOOGLE_API_KEY`      | your MaaS platform's token for the Gemini-compatible endpoint    |
+| `GOOGLE_PROXY_URL`    | `https://maas-openapi.wanjiedata.com/api`                        |
+| `ANTHROPIC_API_KEY`   | your MaaS platform's token for the Anthropic-compatible endpoint |
+| `ANTHROPIC_PROXY_URL` | `https://maas-openapi.wanjiedata.com/api/anthropic`              |
+
+(Swap in your own MaaS provider's URLs/tokens — the `wanjiedata` ones above are just the
+example you gave.) Double-check whether your proxy expects the `/v1` suffix or not — see
+the callout in the docs link above; mismatched suffixes are the most common cause of empty
+responses.
+
+**Model names**: since a MaaS platform's model catalog won't match the official provider's,
+you also need to tell LobeChat which model names exist:
+
+- **OpenAI-compatible**: set `OPENAI_MODEL_LIST`, e.g. `-all,+your-model-name` to clear the
+  default list and add just the one(s) your platform serves (comma-separated for more than
+  one). Full syntax: the `OPENAI_MODEL_LIST` section of the docs link above.
+- **Google/Anthropic-compatible**: there's no equivalent `*_MODEL_LIST` env var for these
+  two providers in this codebase — add the custom model directly in the app itself
+  (Settings → the provider → add a custom model ID) after you deploy.
+
 Do **not** set `NEXT_PUBLIC_SERVICE_MODE` — leaving it unset keeps the app in client-side
 storage mode, which is what this whole setup assumes.
 
