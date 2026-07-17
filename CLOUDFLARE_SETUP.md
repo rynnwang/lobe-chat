@@ -54,10 +54,17 @@ available to connect in the next step.
 In the Pages project → **Settings** → **Environment variables**, add for **Production**
 (and Preview, if you want preview deploys to work too):
 
-| Variable       | Value                  | Why                                                                            |
-| -------------- | ---------------------- | ------------------------------------------------------------------------------ |
-| `ACCESS_CODE`  | a long random password | Secondary gate on chat API calls. Generate one with `openssl rand -base64 24`. |
-| `NODE_VERSION` | `20`                   | Matches the Node version this repo targets (`.nvmrc` = `lts/iron`).            |
+| Variable       | Value                  | Why                                                                                                                                                   |
+| -------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ACCESS_CODE`  | a long random password | Secondary gate on chat API calls. Generate one with `openssl rand -base64 24`.                                                                        |
+| `NODE_VERSION` | `20.18.1`              | Matches `.nvmrc`. Belt-and-suspenders — Cloudflare's build reads `.nvmrc` first (see note below), but this covers you if that file ever goes missing. |
+
+> **Node version gotcha**: this repo's `.nvmrc` originally said `lts/iron` (an `nvm`-style
+> alias for "whatever the current Node 20 LTS release is"). Cloudflare Pages' build image
+> uses `asdf`/`node-build` instead of `nvm`, which doesn't understand that alias and fails
+> the build outright (`node-build: definition not found: 20`) before it even gets to
+> installing dependencies. `.nvmrc` now pins an explicit version (`20.18.1`) instead — if
+> you ever bump it, use a concrete `X.Y.Z` version, not an alias.
 
 Then add API keys for whichever model providers you actually use, e.g.:
 
