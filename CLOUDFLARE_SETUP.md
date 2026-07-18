@@ -17,6 +17,19 @@ change it yourself.
 > actual plan's limit (10 MiB gzip on Workers Paid, which this app should fit; the free
 > plan's 3 MiB is a closer call given the bundle-size findings in the old version of this
 > file — Workers Paid is the safer bet, and you already have it).
+>
+> One consequence of that switch: every route that was previously converted to
+> `export const runtime = 'edge'` (for `next-on-pages`, which required _everything_ to be
+> edge) got reverted back to the default Node.js runtime. OpenNext works the opposite way —
+> it bundles the whole app as one Node.js-compatible Worker via `nodejs_compat`, and treats
+> edge-runtime routes as a special case requiring separate bundling it doesn't do
+> automatically (`OpenNext requires edge runtime function to be defined in a separate
+function` was the actual build error this produced). None of the earlier edge-compatibility
+> work was wasted, though — the underlying fixes (the `pg` webpack alias, the bundled-import
+> i18n loader instead of `node:fs`, the hostname-based proxy SSRF guard instead of
+> `node:dns`) are still correct and still needed, since Workers itself — regardless of which
+> Next.js runtime a route declares — still can't do real DNS lookups or open raw TCP sockets
+> to a Postgres server.
 
 ## What this deployment is
 

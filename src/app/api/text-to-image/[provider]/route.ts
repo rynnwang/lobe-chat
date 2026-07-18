@@ -7,8 +7,6 @@ import { ChatCompletionErrorPayload } from '@/libs/agent-runtime';
 import { TextToImagePayload } from '@/libs/agent-runtime/types';
 import { ChatErrorType } from '@/types/fetch';
 
-export const runtime = 'edge';
-
 export const preferredRegion = [
   'arn1',
   'bom1',

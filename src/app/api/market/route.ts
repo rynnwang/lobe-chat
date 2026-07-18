@@ -2,8 +2,6 @@ import { DEFAULT_LANG } from '@/const/locale';
 
 import { AgentMarket } from './AgentMarket';
 
-export const runtime = 'edge';
-
 export const revalidate = 3600; // revalidate at almost every hour
 
 export const GET = async (req: Request) => {

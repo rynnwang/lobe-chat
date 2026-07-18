@@ -7,8 +7,6 @@ import { ChatErrorType } from '@/types/fetch';
 import { checkAuth } from '../../../middleware/auth';
 import { initAgentRuntimeWithUserPayload } from '../../agentRuntime';
 
-export const runtime = 'edge';
-
 const noNeedAPIKey = (provider: string) =>
   [ModelProvider.OpenRouter, ModelProvider.TogetherAI].includes(provider as any);
 
