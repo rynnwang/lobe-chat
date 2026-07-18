@@ -1,11 +1,11 @@
 # Deploying this fork to a small VPS (Debian 12, 1 GB RAM, 5 GB SSD)
 
-An alternative to [`CLOUDFLARE_SETUP.md`](CLOUDFLARE_SETUP.md) for when Cloudflare Pages'
-free-tier per-function size limit (see the note in that file) isn't worth fighting. This
-runs the full app as a normal Docker container on your own box — no bundle-size ceiling,
-since it's not split into edge functions at all. Cloudflare Access still works exactly the
-same way as a front door; it protects a hostname behind Cloudflare's proxy regardless of
-what's actually running at the origin.
+A free alternative to [`CLOUDFLARE_SETUP.md`](CLOUDFLARE_SETUP.md), which now needs the
+$5/mo Cloudflare Workers Paid plan (see that file for why). This runs the full app as a
+normal Docker container on your own box — no Worker size limit to fit under at all, paid or
+free. Cloudflare Access still works exactly the same way as a front door either way; it
+protects a hostname behind Cloudflare's proxy regardless of what's actually running at the
+origin, whether that's a Cloudflare Worker or your own VPS.
 
 Like `CLOUDFLARE_SETUP.md`, this is a manual, dashboard/terminal-driven guide — nothing here
 is committed to the repo as infrastructure-as-code, so you can see and change every step.
