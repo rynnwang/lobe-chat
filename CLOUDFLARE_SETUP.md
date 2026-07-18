@@ -103,13 +103,16 @@ for anything sensitive — same effect on `process.env`, just encrypted at rest.
 | Variable       | Value                  | Why                                                                            |
 | -------------- | ---------------------- | ------------------------------------------------------------------------------ |
 | `ACCESS_CODE`  | a long random password | Secondary gate on chat API calls. Generate one with `openssl rand -base64 24`. |
-| `NODE_VERSION` | `20.18.1`              | Matches `.nvmrc` — see the gotcha below, same issue applies to Workers Builds. |
+| `NODE_VERSION` | `22.11.0`              | Matches `.nvmrc` — see the gotcha below, same issue applies to Workers Builds. |
 
-> **Node version gotcha** (carried over from the Pages version of this guide): `.nvmrc`
-> originally said `lts/iron`, an `nvm`-style alias. Cloudflare's build image uses
-> `asdf`/`node-build`, which doesn't understand that alias and fails outright
-> (`node-build: definition not found: 20`) before installing anything. `.nvmrc` now pins an
-> explicit `20.18.1` — if you ever bump it, use a concrete `X.Y.Z` version, not an alias.
+> **Node version gotchas**: `.nvmrc` originally said `lts/iron`, an `nvm`-style alias.
+> Cloudflare's build image uses `asdf`/`node-build`, which doesn't understand that alias and
+> fails outright (`node-build: definition not found: 20`) before installing anything —
+> `.nvmrc` needs a concrete `X.Y.Z` version, not an alias. Separately, `.nvmrc` needs to be on
+> **Node 22+, not just any concrete version**: `wrangler deploy` (the deploy command from
+> step 2) refused to run under Node 20 with `Wrangler requires at least Node.js v22.0.0`, even
+> though the build step itself was fine on 20. Since the build and deploy commands share the
+> same container/Node version, `.nvmrc` has to satisfy both — it's pinned to `22.11.0` now.
 
 Then add API keys for whichever model providers you actually use, e.g. `OPENAI_API_KEY`,
 `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY` (or enter them per-provider in the app's Settings UI
