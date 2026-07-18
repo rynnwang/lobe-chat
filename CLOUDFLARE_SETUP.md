@@ -34,20 +34,39 @@ available to connect in the next step.
 
 1.  Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
 2.  Pick this repository.
-3.  **Framework preset**: choose **Next.js**. Cloudflare auto-fills the build command
-    (`npx @cloudflare/next-on-pages@1`) and output directory (`.vercel/output/static`) for
-    this preset — leave those as-is.
+3.  **Framework preset**: choose **Next.js**. Cloudflare auto-fills the build command as
+    `npx @cloudflare/next-on-pages@1` — **change this to `pnpm dlx @cloudflare/next-on-pages@1`**
+    (see gotcha below). Leave the output directory as `.vercel/output/static`.
 4.  Package manager: Pages detects `pnpm` automatically from `pnpm-lock.yaml` and
-    `packageManager` in `package.json`.
+    `packageManager` in `package.json` for the _dependency install_ step, but that's
+    separate from the build command in step 3, which you do need to fix by hand.
 
-> **Heads-up on the build step**: `@cloudflare/next-on-pages` (the tool that converts the
-> Next.js build into a Cloudflare Worker) can be memory-hungry on a large app like this one
-> — it repeatedly ran out of memory when I tested it locally on Windows (a
+> **`npx` vs `pnpm dlx` gotcha**: the framework preset's default build command runs
+> `@cloudflare/next-on-pages` via `npx`, which uses npm even though the project (and its
+> committed lockfile) is pnpm-based. On the real build this caused the CLI to log "The
+> project is set up for pnpm but it is currently being run via npm this might lead to build
+> errors" and then fail with a batch of `Attempted import error: 'useContext' is not
+exported from 'react'`-style errors partway through — classic symptoms of duplicate/
+> mismatched package copies from mixing package managers on one `node_modules`. Using
+> `pnpm dlx` instead keeps the whole build on one package manager.
+
+> **Heads-up on build memory**: `@cloudflare/next-on-pages` can be memory-hungry on a large
+> app like this one — it repeatedly ran out of memory when I tested it locally on Windows (a
 > [documented limitation](https://github.com/cloudflare/next-on-pages) of that tool on
 > Windows specifically). Cloudflare's own Linux build servers are usually fine with it, but
 > **watch the first deploy's build log**. If it fails with an out-of-memory error there too,
 > the fix is trimming unused AI-provider SDKs from `package.json` (this fork bundles \~20
 > providers; you likely only use a couple) — ask me to do that if it comes up.
+
+> **Heads-up on per-function size limits**: Cloudflare enforces a hard 4 MB budget per edge
+> function/Worker. This fork already hit that once — the Clerk `UserProfile`/`SignIn`/
+> `SignUp` pages (`src/app/(auth)/*`, `src/app/(main)/profile/[[...slugs]]/*`) pulled in so
+> much of Clerk's UI kit that their compiled page alone was 4.17 MB, over budget, and failed
+> the whole build. Those routes were already dead code for this deployment (gated behind
+> `enableClerk`, which is never turned on since Cloudflare Access handles auth instead), so
+> they were deleted rather than worked around. If a _different_ route ever hits this same
+> limit, the fix is the same idea: find what's pulling in the bloat and either lazy-load it
+> client-side only, or remove it if it's for a feature this deployment doesn't use.
 
 ## 3. Environment variables
 
