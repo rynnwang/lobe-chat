@@ -34,21 +34,31 @@ available to connect in the next step.
 
 1.  Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
 2.  Pick this repository.
-3.  **Framework preset**: choose **Next.js**. Cloudflare auto-fills the build command as
-    `npx @cloudflare/next-on-pages@1` — **change this to `pnpm dlx @cloudflare/next-on-pages@1`**
-    (see gotcha below). Leave the output directory as `.vercel/output/static`.
-4.  Package manager: Pages detects `pnpm` automatically from `pnpm-lock.yaml` and
-    `packageManager` in `package.json` for the _dependency install_ step, but that's
-    separate from the build command in step 3, which you do need to fix by hand.
+3.  **Framework preset**: choose **Next.js**. Leave the output directory as
+    `.vercel/output/static`.
+4.  **Required — fix the build command before your first deploy**: Cloudflare auto-fills
+    the build command as `npx @cloudflare/next-on-pages@1`. Change it to:
 
-> **`npx` vs `pnpm dlx` gotcha**: the framework preset's default build command runs
-> `@cloudflare/next-on-pages` via `npx`, which uses npm even though the project (and its
-> committed lockfile) is pnpm-based. On the real build this caused the CLI to log "The
-> project is set up for pnpm but it is currently being run via npm this might lead to build
-> errors" and then fail with a batch of `Attempted import error: 'useContext' is not
-exported from 'react'`-style errors partway through — classic symptoms of duplicate/
-> mismatched package copies from mixing package managers on one `node_modules`. Using
-> `pnpm dlx` instead keeps the whole build on one package manager.
+    ```
+    pnpm dlx @cloudflare/next-on-pages@1
+    ```
+
+    This isn't optional/cosmetic — leaving the default `npx` command **will break the
+    build**. Confirmed on real deploys of this fork: `npx` runs the tool under npm even
+    though the project (and its committed lockfile) is pnpm-based, which produces two
+    separate failures — a wave of `Attempted import error: 'useContext' is not exported
+from 'react'`-style errors, and, even past that, essentially every page's edge function
+    balloons to the same \~4.17 MB (over Cloudflare's 4 MB hard limit) — almost certainly
+    duplicate copies of React and other large dependencies getting bundled in because npm
+    and pnpm resolved the tree differently. Switching to `pnpm dlx` keeps dependency
+    resolution on one package manager throughout and fixes both.
+
+    If you're editing this after already creating the project: **Settings → Builds** (or
+    **Builds & deployments**) → **Build command** field → same fix, then retrigger a deploy.
+
+5.  Package manager: Pages detects `pnpm` automatically from `pnpm-lock.yaml` and
+    `packageManager` in `package.json` for the _dependency install_ step — that part doesn't
+    need manual fixing, only the build command in step 4 does.
 
 > **Heads-up on build memory**: `@cloudflare/next-on-pages` can be memory-hungry on a large
 > app like this one — it repeatedly ran out of memory when I tested it locally on Windows (a
@@ -59,14 +69,16 @@ exported from 'react'`-style errors partway through — classic symptoms of dupl
 > providers; you likely only use a couple) — ask me to do that if it comes up.
 
 > **Heads-up on per-function size limits**: Cloudflare enforces a hard 4 MB budget per edge
-> function/Worker. This fork already hit that once — the Clerk `UserProfile`/`SignIn`/
-> `SignUp` pages (`src/app/(auth)/*`, `src/app/(main)/profile/[[...slugs]]/*`) pulled in so
-> much of Clerk's UI kit that their compiled page alone was 4.17 MB, over budget, and failed
-> the whole build. Those routes were already dead code for this deployment (gated behind
-> `enableClerk`, which is never turned on since Cloudflare Access handles auth instead), so
-> they were deleted rather than worked around. If a _different_ route ever hits this same
-> limit, the fix is the same idea: find what's pulling in the bloat and either lazy-load it
-> client-side only, or remove it if it's for a feature this deployment doesn't use.
+> function/Worker, separately from the npm/pnpm issue above. This fork already hit that once
+> for a real, code-weight reason — the Clerk `UserProfile`/`SignIn`/`SignUp` pages
+> (`src/app/(auth)/*`, `src/app/(main)/profile/[[...slugs]]/*`) pulled in so much of Clerk's
+> UI kit that their compiled page alone was over budget. Those routes were already dead code
+> for this deployment (gated behind `enableClerk`, which is never turned on since Cloudflare
+> Access handles auth instead), so they were deleted rather than worked around. If a
+> _different_ route ever hits this limit — after confirming the build command above is
+> actually `pnpm dlx`, not `npx` — the fix is the same idea: find what's pulling in the
+> bloat and either lazy-load it client-side only, or remove it if it's for a feature this
+> deployment doesn't use.
 
 ## 3. Environment variables
 
