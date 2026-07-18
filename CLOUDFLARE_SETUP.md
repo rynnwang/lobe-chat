@@ -1,8 +1,21 @@
-# Deploying this fork to Cloudflare (free tier)
+# Deploying this fork to Cloudflare Pages
 
 This is a manual, dashboard-driven setup guide — there's no `wrangler.toml`/`wrangler.jsonc`
 in this repo on purpose. Everything below is configured by hand in the Cloudflare dashboard,
 so you can see and change every setting yourself.
+
+> **Important — this needs the $5/mo Workers Paid plan, not the free plan.** Cloudflare
+> Workers' real per-function limit is **1 MiB gzip-compressed** (not the "4 MB" figure
+> `@cloudflare/next-on-pages` warns about, which is a looser, uncompressed-ish internal
+> check). A bundle analysis of this app found the shared chunk containing part of `antd`
+> alone is already \~1.8 MB gzipped — before any page-specific code — because Cloudflare
+> Workers don't support shared runtime chunk-loading the way a browser does, so common
+> libraries (antd, the code-syntax-highlighter's language data, mermaid diagrams) end up
+> duplicated into every single page's function. Getting a full-featured LobeChat under 1 MiB
+> per function would need a large lazy-loading refactor with no guarantee of success. Workers
+> Paid raises the limit to 10 MiB gzip, which comfortably fits with none of that work. If you
+> want to stay strictly free, see [`VPS_SETUP.md`](VPS_SETUP.md) instead — same Cloudflare
+> Access front door, but the app runs as a normal server process with no bundle-size ceiling.
 
 ## What this deployment is
 
@@ -34,39 +47,33 @@ available to connect in the next step.
 
 1.  Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
 2.  Pick this repository.
-3.  **Framework preset**: choose **Next.js**. Cloudflare auto-fills the build command as
-    `npx @cloudflare/next-on-pages@1` — **change this to `pnpm dlx @cloudflare/next-on-pages@1`**
-    (see gotcha below). Leave the output directory as `.vercel/output/static`.
-4.  Package manager: Pages detects `pnpm` automatically from `pnpm-lock.yaml` and
-    `packageManager` in `package.json` for the _dependency install_ step, but that's
-    separate from the build command in step 3, which you do need to fix by hand.
-
-> **`npx` vs `pnpm dlx` gotcha**: the framework preset's default build command runs
-> `@cloudflare/next-on-pages` via `npx`, which uses npm even though the project (and its
-> committed lockfile) is pnpm-based. On the real build this caused the CLI to log "The
-> project is set up for pnpm but it is currently being run via npm this might lead to build
-> errors" and then fail with a batch of `Attempted import error: 'useContext' is not
-exported from 'react'`-style errors partway through — classic symptoms of duplicate/
-> mismatched package copies from mixing package managers on one `node_modules`. Using
-> `pnpm dlx` instead keeps the whole build on one package manager.
+3.  **Framework preset**: choose **Next.js**. Leave the output directory as
+    `.vercel/output/static`.
+4.  **Recommended**: Cloudflare auto-fills the build command as
+    `npx @cloudflare/next-on-pages@1`. Change it to `pnpm dlx @cloudflare/next-on-pages@1` —
+    the project (and its committed lockfile) is pnpm-based, so keeping the whole build on one
+    package manager avoids resolving a second, possibly-different dependency tree via npm on
+    top of the one pnpm already installed. (You may still see a batch of
+    `Attempted import error: 'useContext' is not exported from 'react'`-style lines in the
+    build log either way — those turned out to be non-fatal diagnostic noise unrelated to
+    the actual blocker below, not something this fixes.)
+5.  Package manager: Pages detects `pnpm` automatically from `pnpm-lock.yaml` and
+    `packageManager` in `package.json` for the _dependency install_ step.
 
 > **Heads-up on build memory**: `@cloudflare/next-on-pages` can be memory-hungry on a large
 > app like this one — it repeatedly ran out of memory when I tested it locally on Windows (a
 > [documented limitation](https://github.com/cloudflare/next-on-pages) of that tool on
-> Windows specifically). Cloudflare's own Linux build servers are usually fine with it, but
-> **watch the first deploy's build log**. If it fails with an out-of-memory error there too,
-> the fix is trimming unused AI-provider SDKs from `package.json` (this fork bundles \~20
-> providers; you likely only use a couple) — ask me to do that if it comes up.
+> Windows specifically). Cloudflare's own Linux build servers have more headroom, but if you
+> hit an out-of-memory error there too, the fix is trimming unused AI-provider SDKs from
+> `package.json` (this fork bundles \~20 providers; you likely only use a couple).
 
-> **Heads-up on per-function size limits**: Cloudflare enforces a hard 4 MB budget per edge
-> function/Worker. This fork already hit that once — the Clerk `UserProfile`/`SignIn`/
-> `SignUp` pages (`src/app/(auth)/*`, `src/app/(main)/profile/[[...slugs]]/*`) pulled in so
-> much of Clerk's UI kit that their compiled page alone was 4.17 MB, over budget, and failed
-> the whole build. Those routes were already dead code for this deployment (gated behind
-> `enableClerk`, which is never turned on since Cloudflare Access handles auth instead), so
-> they were deleted rather than worked around. If a _different_ route ever hits this same
-> limit, the fix is the same idea: find what's pulling in the bloat and either lazy-load it
-> client-side only, or remove it if it's for a feature this deployment doesn't use.
+> **The real blocker — per-function size**: see the callout at the top of this file. This
+> needs Workers Paid ($5/mo) to comfortably fit; the free plan's real 1 MiB gzip limit is
+> smaller than this app's shared baseline (antd, syntax highlighting, etc.) regardless of
+> which routes exist. Deleting the Clerk-only routes (`src/app/(auth)/*`,
+> `src/app/(main)/profile/[[...slugs]]/*` — dead code either way, since Cloudflare Access
+> replaces Clerk here) was a real, worthwhile cleanup, but it was never going to be enough
+> on its own — don't spend more time deleting routes chasing this one.
 
 ## 3. Environment variables
 
