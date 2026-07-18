@@ -7,8 +7,6 @@ import { getTracePayload } from '@/utils/trace';
 import { checkAuth } from '../../middleware/auth';
 import { createTraceOptions, initAgentRuntimeWithUserPayload } from '../agentRuntime';
 
-export const runtime = 'edge';
-
 export const POST = checkAuth(async (req: Request, { params, jwtPayload, createRuntime }) => {
   const { provider } = params;
 

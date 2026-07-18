@@ -6,8 +6,6 @@ import { pino } from '@/libs/logger';
 
 import { validateRequest } from './validateRequest';
 
-export const runtime = 'edge';
-
 if (authEnv.NEXT_PUBLIC_ENABLE_CLERK_AUTH && isServerMode && !authEnv.CLERK_WEBHOOK_SECRET) {
   throw new Error('`CLERK_WEBHOOK_SECRET` environment variable is missing');
 }

@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 
-export const runtime = 'edge';
-
 // node:dns / the `ip` package aren't available on the Edge Runtime, so private-network
 // access is blocked by hostname/literal-IP pattern instead of a resolved-IP lookup.
 // Cloudflare's own fetch() implementation additionally refuses to reach private/internal

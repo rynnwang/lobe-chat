@@ -2,8 +2,6 @@ import { DEFAULT_LANG } from '@/const/locale';
 
 import { AgentMarket } from '../AgentMarket';
 
-export const runtime = 'edge';
-
 export const GET = async (req: Request, { params }: { params: { id: string } }) => {
   const { searchParams } = new URL(req.url);
 

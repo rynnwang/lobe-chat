@@ -14,10 +14,6 @@ import { isMobileDevice } from '@/utils/responsive';
 const PWAInstall = dynamic(() => import('@/features/PWAInstall'), { ssr: false });
 const inVercel = process.env.VERCEL === '1';
 
-// Cloudflare Pages only runs Route/Page segments on the Edge Runtime,
-// so the whole page tree needs to opt in here (route handlers opt in individually).
-export const runtime = 'edge';
-
 type RootLayoutProps = {
   children: ReactNode;
   modal: ReactNode;
