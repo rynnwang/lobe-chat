@@ -68,6 +68,20 @@ your fork/branch so it's available to connect in the next step.
 > a legitimate reason to eventually upgrade to Next 15, just not something folded into this
 > Cloudflare deployment work.
 
+> **Why `cf:build` also sets `NODE_OPTIONS=--max-old-space-size=4096`**: the first real build
+> on Cloudflare's Workers Builds container OOM'd partway through `next build` itself —
+> `FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory` around
+> the \~2 GB mark, which is roughly Node's un-tuned default heap ceiling. The existing
+> `Dockerfile` already works around the same underlying issue the same way (it sets
+> `NODE_OPTIONS=--max-old-space-size=8192` for its build stage) — 4096 here is a guess at a
+> value that fits Workers Builds' container without getting OOM-killed by the container
+> itself before V8 even hits its own limit; I couldn't verify the container's actual memory
+> ceiling from outside it. If this build still fails with a heap or memory error, try a lower
+> number (e.g. 3072) in case the container has less than 4 GB; if it fails silently with no
+> V8 error at all (just a killed process), that's the container's own OOM killer, and
+> trimming unused AI-provider SDKs from `package.json` is the fallback (this fork bundles
+> \~20 providers; you likely only use a couple).
+
 ## 3. Environment variables
 
 Worker → **Settings** → **Variables and Secrets**. Use **Secret** (not plain **Variable**)
